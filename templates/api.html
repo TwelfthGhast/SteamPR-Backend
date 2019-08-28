@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+<head>
+    {% include 'head.html' %}
+</head>
+<body>
+<div id="text-body">
+    <div id="text-centre">
+        <h1> Steam PageRank Interface </h1>
+        <p> Used to access the Steam PageRank API</p>
+
+        <p class="break"></p>
+        <h2> GetProfile </h2>
+        <div class="code"><p>GET {{apiv1}}GetProfile/</p></div>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>steamid</td>
+                <td>uint64</td>
+                <td>Yes</td>
+                <td>SteamID64 of the requested account</td>
+            </tr>
+        </table>
+        <p> Gives general information about a player</p>
+        <h3> Response:</h3>
+        <div class="code"><pre>
+{
+    steamid64: string,
+    weighting: float,
+    level:     uint32,
+    reputation_level: uint32,
+    badges: {
+        badgeid:   uint32,
+        completed: uint64,
+        xp:        uint32,
+        appid:     uint32,
+        foil:      boolean
+    }[],
+    friends: {
+        steamid64: string,
+        since:     uint64
+    }[]
+}
+        </pre></div>
+
+        <p class="break"></p>
+        <h2> GetList </h2>
+        <div class="code"><p>GET {{apiv1}}GetList/</p></div>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>lvlmin</td>
+                <td>uint32</td>
+                <td>No</td>
+                <td>Minimum level of requested accounts. Default is 0</td>
+            </tr>
+            <tr>
+                <td>lvlmax</td>
+                <td>uint32</td>
+                <td>No</td>
+                <td>Maximum level of requested accounts. Default is 10,000</td>
+            </tr>
+            <tr>
+                <td>wgtmin</td>
+                <td>float</td>
+                <td>No</td>
+                <td>Minimum pagerank weighting of requested accounts. Default is 0</td>
+            </tr>
+            <tr>
+                <td>wgtmax</td>
+                <td>float</td>
+                <td>No</td>
+                <td>Maximum pagerank weighting of requested accounts. Default is 100,000,000</td>
+            </tr>
+            <tr>
+                <td>limit</td>
+                <td>uint32</td>
+                <td>No</td>
+                <td>Number of results to return. Default is 200, upper limit is 1000</td>
+            </tr>
+        </table>
+        <p> Searches database for accounts matching specified filters. Search results are sorted in descending order of pagerank weightings.</p>
+        <h3> Response Structure:</h3>
+        <div class="code"><pre>
+{
+    response: {
+        steamid64: string,
+        level:     uint32,
+        weighting: uint32
+    }[]
+}
+        </pre></div>
+
+        <p class="break"></p>
+        <h2> GetBadge </h2>
+        <div class="code"><p>GET {{apiv1}}GetBadge/</p></div>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Required</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>badgeid</td>
+                <td>uint32</td>
+                <td>No</td>
+                <td>Badgeid to be searched. Default is 1</td>
+            </tr>
+            <tr>
+                <td>appid</td>
+                <td>uint32</td>
+                <td>No</td>
+                <td>Appid to be searched - this should only be used in conjunction where badgeid = 1. When unspecified and badgeid = 1, this returns the Steam Community Badge data</td>
+            </tr>
+            <tr>
+                <td>epoch</td>
+                <td>uint64</td>
+                <td>No</td>
+                <td>Minimum epoch time of returned results. Default is 0</td>
+            </tr>
+            <tr>
+                <td>xpmin</td>
+                <td>uint64</td>
+                <td>No</td>
+                <td>Minimum xp of returned results. Default is 0</td>
+            </tr>
+            <tr>
+                <td>xpmax</td>
+                <td>uint64</td>
+                <td>No</td>
+                <td>Maximum xp of returned results. Default is 10,000,000,000</td>
+            </tr>
+            <tr>
+                <td>foil</td>
+                <td>boolean</td>
+                <td>No</td>
+                <td>Whether to limit to foil or non foil cards. Default value returns both types of cards. Set to 1 for foil only, or 0 for non-foil only.</td>
+            </tr>
+            <tr>
+                <td>limit</td>
+                <td>uint32</td>
+                <td>No</td>
+                <td>Number of results to return. Default is 200, upper limit is 1000</td>
+            </tr>
+        </table>
+        <p> Searches database for accounts who own a particular badge. Search results are returned in order of ascending epoch time. If more than 1000 results are required, store the epoch time from the last element in the returned JSON, and craft a new GET request.</p>
+        <h3> Examples: </h3>
+        <p> Max level normal badge in Counter-Strike: Global Offensive</p>
+        <div class="code"><p>GET {{apiv1}}GetBadge/?appid=730&xpmin=500</p></div>
+        <p> Foil badge for Team Fortress 2</p>
+        <div class="code"><p>GET {{apiv1}}GetBadge/?appid=440&foil=1</p></div>
+        <p> High level badges for the Steam Grand Prix 2019 event</p>
+        <div class="code"><p>GET {{apiv1}}GetBadge/?badgeid=37&xpmin=100000</p></div>
+        <h3> Response Structure:</h3>
+        <div class="code"><pre>
+{
+    response: {
+        steamid64: string,
+        completed: uint64,
+        xp:        uint32,
+        badgeid:   uint32,
+        appid:     uint32,
+        foil:      boolean
+    }[]
+}
+        </pre></div>
+
+        <p class="break"></p>
+        <h2> GetIteration </h2>
+        <div class="code"><p>GET {{apiv1}}GetIteration/</p></div>
+        <p> Iteration of the current pagerank database. Higher is better.</p>
+        <h3> Response Structure:</h3>
+        <div class="code"><pre>
+{
+    iteration: uint32
+}
+        </pre></div>
+
+        <p class="break"></p>
+        <h2> GetRank </h2>
+        <div class="code"><p>GET {{apiv1}}GetRank/&ltsteamid&gt</p></div>
+        <p> Gives rankings of an account relative to other accounts of the same level as well as overall percentile across entire database.</p>
+        <p> As this API endpoint is computationally expensive, results are cached for up to a week.</p>
+        <p> Due to implementation of caching, endpoint requires a different format compared to other endpoints.</p>
+        <h3> Examples: </h3>
+        <div class="code"><p>GET {{apiv1}}GetRank/76561198218130299</p></div>
+        <h3> Response Structure:</h3>
+        <div class="code"><pre>
+{
+    samelevel:         uint32,
+    ranklevel:         uint32,
+    overallpercentile: uint32,
+}
+        </pre></div>
+
+        <p class="break"></p>
+        <p class="break"></p>
+        <p class="break"></p>
+    </div>
+</div>
+<div id="footer">{% include 'footer.html' %}</div>
+</body>
+</html>
