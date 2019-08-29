@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_caching import Cache
 import psycopg2
 import locale #comma formatting for numbers
+import config as cfg
 
 cacheconfig = {
     "DEBUG": True,          # some Flask specific configs
@@ -15,14 +16,14 @@ cache = Cache(app)
 app.config['JSON_SORT_KEYS'] = False
 locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
-DB_USER = ""
-DB_PASS = ""
-DB_NAME = ""
+DB_USER = cfg.dbsettings['username']
+DB_PASS = cfg.dbsettings['password']
+DB_NAME = cfg.dbsettings['dbname']
 MAX_ITERATION = 0
 ACC_COUNT = 0
-DB_PR_NAME = ""
-DB_REL_NAME = ""
-DB_BDG_NAME = ""
+DB_PR_NAME = cfg.dbsettings['tablepagerank']
+DB_REL_NAME = cfg.dbsettings['tablerelationships']
+DB_BDG_NAME = cfg.dbsettings['tablebadges']
 
 API_DOMAIN = "https://api.steampagerank.com/1.0/"
 
@@ -225,29 +226,29 @@ def database_api():
 @cache.memoize(timeout=60*60*24*7) #cache for a week
 def get_rank(steamid64):
     try:
-	    steamid64 = int(steamid64)
-	    conn = psycopg2.connect(host="localhost", database=DB_NAME, user=DB_USER, password=DB_PASS)
-	    cur = conn.cursor()
-	    cur.execute("SELECT weighting, level FROM " + DB_PR_NAME + " WHERE steamid64 = '%s' AND iteration = %s;",
-		        (steamid64, MAX_ITERATION))
-	    row = cur.fetchone()
-	    cur.execute("SELECT COUNT(*) FROM " + DB_PR_NAME + " WHERE level = %s AND iteration = %s;",
-		        (row[1], MAX_ITERATION))
-	    max = cur.fetchone()
-	    # Inaccurate float comparisons means we have to add condition where steamid != what we are comparing.
-	    cur.execute("SELECT COUNT(*) FROM " + DB_PR_NAME + " WHERE level = %s AND iteration = %s AND weighting > %s AND steamid64 != '%s';",
-		        (row[1], MAX_ITERATION, row[0], steamid64))
-	    rank = cur.fetchone()
-	    conn.close()
-	    percentile = 100
-	    for i in RANK_PERCENTILES:
-		if row[0] >= i['weighting']:
-		    percentile = i['percentile']
-		    break
-	    return jsonify(playerlevel=row[1],
-		           samelevel=max[0],
-		           ranklevel=rank[0] + 1,
-		           overallpercentile=percentile)
+        steamid64 = int(steamid64)
+        conn = psycopg2.connect(host="localhost", database=DB_NAME, user=DB_USER, password=DB_PASS)
+        cur = conn.cursor()
+        cur.execute("SELECT weighting, level FROM " + DB_PR_NAME + " WHERE steamid64 = '%s' AND iteration = %s;",
+                    (steamid64, MAX_ITERATION))
+        row = cur.fetchone()
+        cur.execute("SELECT COUNT(*) FROM " + DB_PR_NAME + " WHERE level = %s AND iteration = %s;",
+                    (row[1], MAX_ITERATION))
+        max = cur.fetchone()
+        # Inaccurate float comparisons means we have to add condition where steamid != what we are comparing.
+        cur.execute("SELECT COUNT(*) FROM " + DB_PR_NAME + " WHERE level = %s AND iteration = %s AND weighting > %s AND steamid64 != '%s';",
+                    (row[1], MAX_ITERATION, row[0], steamid64))
+        rank = cur.fetchone()
+        conn.close()
+        percentile = 100
+        for i in RANK_PERCENTILES:
+            if row[0] >= i['weighting']:
+                percentile = i['percentile']
+                break
+        return jsonify(playerlevel=row[1],
+                       samelevel=max[0],
+                       ranklevel=rank[0] + 1,
+                       overallpercentile=percentile)
     except:
        return jsonify(error="An unexpected error occurred")
 
