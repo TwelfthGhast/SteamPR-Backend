@@ -64,6 +64,11 @@ def about_site():
 def iteration_count():
     return jsonify(iteration=MAX_ITERATION)
 
+@app.route('/1.0/GetCount/')
+@cache.memoize(timeout=60*60*24*7)
+def account_count():
+    return jsonify(count=ACC_COUNT)
+
 @app.route('/1.0/GetBadge/')
 def badge_api():
     badgeid = request.args.get("badgeid", 1)
@@ -100,7 +105,7 @@ def badge_api():
         for i in row:
             if appid > 0 and badgeid == 1:
                 data.append({
-                    "steamid64" : i[0],
+                    "steamid" : i[0],
                     "completed" : i[1],
                     "xp"        : i[2],
                     "badgeid"   : badgeid,
@@ -109,7 +114,7 @@ def badge_api():
                 })
             else:
                 data.append({
-                    "steamid64": i[0],
+                    "steamid": i[0],
                     "completed": i[1],
                     "xp": i[2],
                     "badgeid": badgeid
@@ -145,7 +150,7 @@ def profile_api():
                     if i[3] >= 0:
                         badges_list.append({
                             'badgeid': i[0],
-                            'completed': i[1],
+                            'completion_time': i[1],
                             'xp': i[2],
                             'appid': i[3],
                             'foil': i[4]
@@ -153,7 +158,7 @@ def profile_api():
                     else:
                         badges_list.append({
                             'badgeid': i[0],
-                            'completed': i[1],
+                            'completion_time': i[1],
                             'xp': i[2],
                             'foil': i[4]
                         })
@@ -163,16 +168,16 @@ def profile_api():
                 row = cur.fetchall()
                 for i in row:
                     friends_list.append({
-                        'steamid64': i[0],
-                        'since': i[1]
+                        'steamid': i[0],
+                        'friend_since': i[1]
                     })
             else:
                 cur.execute("SELECT steamid64in, since FROM " + DB_REL_NAME + " WHERE steamid64out = %s ORDER BY since;", (str_steamid64,))
                 row = cur.fetchall()
                 for i in row:
                     friends_list.append({
-                        'steamid64': i[0],
-                        'since': i[1]
+                        'steamid': i[0],
+                        'friend_since': i[1]
                     })
             conn.close()
             return jsonify(steamid64 = str_steamid64,
@@ -212,7 +217,7 @@ def database_api():
         data_list = []
         for i in row:
             data_item = {
-                'steamid64' : i[0],
+                'steamid' : i[0],
                 'level'     : i[1],
                 'weighting' : i[2]
             }
